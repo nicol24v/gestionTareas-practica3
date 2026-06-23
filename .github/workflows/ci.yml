@@ -1,4 +1,4 @@
-name: CI - Tests automáticos
+name: CI/CD - Tests, Build y Deploy simulado
 
 on:
   push:
@@ -50,3 +50,39 @@ jobs:
 
       - name: Ejecutar tests
         run: python manage.py test
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v3
+
+      - name: Construir imagen Docker
+        run: docker build -t gestion-tareas:latest .
+
+      - name: Guardar imagen como artefacto
+        run: docker save gestion-tareas:latest | gzip > imagen-docker.tar.gz
+
+      - name: Subir artefacto a GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: imagen-docker
+          path: imagen-docker.tar.gz
+
+  deploy-simulado:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v3
+
+      - name: Simular despliegue
+        run: |
+          mkdir -p /tmp/deploy
+          cp -r . /tmp/deploy/
+          echo "Proyecto copiado a /tmp/deploy"
+          echo "Simulación: docker-compose up -d"
+          echo "Despliegue simulado completado exitosamente"
